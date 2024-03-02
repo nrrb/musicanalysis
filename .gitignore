@@ -1,0 +1,7 @@
+venv
+*.pyc
+images
+*.mp3
+*.wav
+.DS_Store
+.ipynb_checkpoints
