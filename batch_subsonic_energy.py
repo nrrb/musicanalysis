@@ -83,13 +83,13 @@ def worker_process(mp3_file):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Recursively compute weighted subsonic energy scores (0 to 100) for all MP3 files '
+        description='Recursively compute weighted subsonic energy energies (0 to 100) for all MP3 files '
                     'in a folder and output the results to a CSV file.'
     )
     parser.add_argument('folder', type=str, nargs='?', default=None,
                         help='Path to the folder containing MP3 files.')
-    parser.add_argument('--output', type=str, default='subsonic_scores.csv',
-                        help='Path to the output CSV file (default: subsonic_scores.csv).')
+    parser.add_argument('--output', type=str, default='subsonic_energies.csv',
+                        help='Path to the output CSV file (default: subsonic_energies.csv).')
     parser.add_argument('--process-file', type=str,
                         help='(Internal) Process a single file; used by the main process.')
     args = parser.parse_args()
