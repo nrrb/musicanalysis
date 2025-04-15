@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- Open Graph (OG) Meta Tags -->
+  <meta property="og:title" content="💥 Banger Analysis">
+  <meta property="og:description" content="An audio analysis tool to find those subwoofer bangers.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nrrb.github.io/musicanalysis/web/">
+  <meta property="og:image" content="https://nrrb.github.io/musicanalysis/web/assets/images/banger-analysis.png">  
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="💥 Banger Analysis">
+  <meta name="twitter:description" content="An audio analysis tool to find those subwoofer bangers.">  
+  <!-- Favicon metadata -->
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/favicons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicons/favicon-16x16.png">
+  <link rel="manifest" href="./assets/favicons/site.webmanifest">
+  <link rel="stylesheet" href="./assets/css/tailwind.css">
+  <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+  <title>Banger Analysis</title>
+  <style>
+    .canvas-container {
+      position: relative;
+      width: 800px;
+      margin-bottom: 20px;
+    }
+    /* Data canvas scrolls behind fixed guide canvas */
+    .canvas-container canvas {
+      display: block;
+    }
+    .guide-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    #lowFreqCanvasData, #lowFreqCanvasGuides,
+    #heatmapCanvasData, #heatmapCanvasGuides {
+      width: 700px;
+    }
+    #lowFreqContainer {
+      height: 200px;
+    }
+    #heatmapContainer {
+      height: 200px;
+    }
+    #lowFreqCanvasData,  #lowFreqCanvasGuides {
+      height: 200px;
+    }
+    #heatmapCanvasData, #heatmapCanvasGuides {
+      height: 200px;
+    }
+
+    input[type="file"] {
+      width: 400px;
+      appearance: none; /* Remove default styling in supporting browsers */
+    }
+  </style>
+</head>
+<body class="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+  <div class="min-h-screen flex items-center justify-center px-4 py-2">
+    <div class="max-w-3xl w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
+      <div class="flex flex-col items-center md:items-start space-y-6 md:space-y-0">
+        <h1 class="text-3xl font-bold mb-2">💥 Banger Analysis 💥</h1>
+        <div class="p-1">
+          <form class="max-w-lg mx-auto">
+            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" for="audio-upload">Upload Audio:</label>
+            <input class="block text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" id="audio-upload" type="file" accept="audio/*,.mp3,audio/mpeg">
+          </form>
+        </div>
+
+        <div class="p-1">
+          <h2 class="text-2xl font-bold mb-2">Low-Frequency (20–150 Hz) Scrolling Line Graph</h2>
+          <p class="text-sm mb-1">
+            This graph represents the average intensity within the 20–150 Hz band.
+            The vertical axis shows amplitude (0–255). A dot drawn near “255” indicates strong bass energy,
+            while a dot near “0” indicates weak energy.
+          </p>
+        </div>
+        <div id="lowFreqContainer" class="canvas-container">
+          <!-- Scrolling data canvas -->
+          <canvas id="lowFreqCanvasData"></canvas>
+          <!-- Static guide overlay -->
+          <canvas id="lowFreqCanvasGuides" class="guide-canvas"></canvas>
+        </div>
+        
+        <div class="p-1">
+          <h2 class="text-2xl font-bold mb-2">Full-Range Heatmap Spectrogram</h2>
+          <p class="text-sm mb-1">
+            This heatmap displays the full frequency spectrum.
+            The vertical axis is labeled in Hz (0 Hz at the bottom and the maximum frequency at the top).
+            Color indicates amplitude, where cooler colors (blue) represent lower amplitude and warmer colors (red) represent higher amplitude.
+          </p>
+        </div>
+        <div id="heatmapContainer" class="canvas-container">
+          <!-- Scrolling data canvas -->
+          <canvas id="heatmapCanvasData"></canvas>
+          <!-- Static guide overlay -->
+          <canvas id="heatmapCanvasGuides" class="guide-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./script.js" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+</body>
+</html>
