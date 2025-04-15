@@ -25,6 +25,8 @@ This shows a progress bar using [tqdm](https://tqdm.github.io/), since I observe
 
 Check out the full output I generated for my music library here: [energies.csv](./energies.csv)
 
+Through my analysis, I found that the track in my collection with the greatest subs energy was an absolute banger of Jersey Club: [Mvntana - Werk (feat. Pyt Ny [Clout Chaser 1 Extended])](https://soundcloud.com/teammvntana/werk-feat-nyema)
+
 **Note**:
 Because of excessive memory usage I observed when I just looped through all file analysis within the single script, I made it instead call itself with `python batch_subsonic_energy.py --process-file </path/to/music/song.mp3>`, which would then output to `STDOUT` the comma-separated values of `song_path`, `energy`, `song_duration`. The parent script instance would collect all output from the subprocesses and collate them into the output CSV. This way, the garbage collection on each process would happen automatically by the OS and deal with any possible memory leaks in [scipy](https://scipy.org/) or [librosa](https://librosa.org/doc/latest/index.html), which are what I used for the audio analysis. 
 
