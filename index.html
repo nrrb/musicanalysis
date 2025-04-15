@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dual Spectrogram Analysis with Pause Control</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #222;
+      color: #eee;
+      margin: 0;
+      padding: 20px;
+    }
+    #controls {
+      margin-bottom: 20px;
+    }
+    .canvas-container {
+      position: relative;
+      width: 800px;
+      margin-bottom: 20px;
+    }
+    /* Data canvas scrolls behind fixed guide canvas */
+    .canvas-container canvas {
+      display: block;
+    }
+    .guide-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    button {
+      padding: 6px 12px;
+      font-size: 14px;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h1>Dual Spectrogram Analysis with Pause Control</h1>
+    <p>Select an MP3 file to analyze:</p>
+    <input type="file" id="audio-upload" accept="audio/*">
+    <button id="pauseButton" disabled>Pause</button>
+  </div>
+  
+  <!-- Low-Frequency (20–150 Hz) Scrolling Line Graph Section -->
+  <div id="explanation-low">
+    <h2>Low-Frequency (20–150 Hz) Scrolling Line Graph</h2>
+    <p>
+      This graph represents the average intensity within the 20–150 Hz band.
+      The vertical axis shows amplitude (0–255). A dot drawn near “255” indicates strong bass energy,
+      while a dot near “0” indicates weak energy.
+    </p>
+  </div>
+  <div id="lowFreqContainer" class="canvas-container" style="height:200px;">
+    <!-- Scrolling data canvas -->
+    <canvas id="lowFreqCanvasData" width="800" height="200"></canvas>
+    <!-- Static guide overlay -->
+    <canvas id="lowFreqCanvasGuides" class="guide-canvas" width="800" height="200"></canvas>
+  </div>
+  
+  <!-- Full-Range Heatmap Spectrogram Section -->
+  <div id="explanation-heatmap">
+    <h2>Full-Range Heatmap Spectrogram</h2>
+    <p>
+      This heatmap displays the full frequency spectrum.
+      The vertical axis is labeled in Hz (0 Hz at the bottom and the maximum frequency at the top).
+      Color indicates amplitude, where cooler colors (blue) represent lower amplitude and warmer colors (red) represent higher amplitude.
+    </p>
+  </div>
+  <div id="heatmapContainer" class="canvas-container" style="height:300px;">
+    <!-- Scrolling data canvas -->
+    <canvas id="heatmapCanvasData" width="800" height="300"></canvas>
+    <!-- Static guide overlay -->
+    <canvas id="heatmapCanvasGuides" class="guide-canvas" width="800" height="300"></canvas>
+  </div>
+  
+  <script>
+    // Global variables for control and animation IDs.
+    let audioCtx = null;
+    let lowFreqAnimationId = null;
+    let heatmapAnimationId = null;
+
+    const pauseButton = document.getElementById('pauseButton');
+    const fileInput = document.getElementById('audio-upload');
+
+    // Pause/Resume event listener.
+    pauseButton.addEventListener('click', () => {
+      if (!audioCtx) return;
+      if (audioCtx.state === 'running') {
+        // Suspend the audio and cancel animation frames.
+        audioCtx.suspend().then(() => {
+          cancelAnimationFrame(lowFreqAnimationId);
+          cancelAnimationFrame(heatmapAnimationId);
+          pauseButton.textContent = 'Resume';
+        });
+      } else {
+        // Resume the audio and restart the animation loops.
+        audioCtx.resume().then(() => {
+          pauseButton.textContent = 'Pause';
+          // Restart the animation loops.
+          lowFreqAnimationId = requestAnimationFrame(drawLowFreq);
+          heatmapAnimationId = requestAnimationFrame(drawHeatmap);
+        });
+      }
+    });
+
+    // Retrieve canvases and contexts for low-frequency visualization.
+    const lowFreqCanvasData = document.getElementById('lowFreqCanvasData');
+    const lowCtx = lowFreqCanvasData.getContext('2d');
+    const lowFreqCanvasGuides = document.getElementById('lowFreqCanvasGuides');
+    const lowGuideCtx = lowFreqCanvasGuides.getContext('2d');
+
+    // Retrieve canvases and contexts for the full-range heatmap.
+    const heatmapCanvasData = document.getElementById('heatmapCanvasData');
+    const heatmapCtx = heatmapCanvasData.getContext('2d');
+    const heatmapCanvasGuides = document.getElementById('heatmapCanvasGuides');
+    const heatmapGuideCtx = heatmapCanvasGuides.getContext('2d');
+
+    // Initialize the data canvases with a black background.
+    lowCtx.fillStyle = 'black';
+    lowCtx.fillRect(0, 0, lowFreqCanvasData.width, lowFreqCanvasData.height);
+    heatmapCtx.fillStyle = 'black';
+    heatmapCtx.fillRect(0, 0, heatmapCanvasData.width, heatmapCanvasData.height);
+
+    // Draw static guides for the low-frequency graph.
+    function drawLowFreqGuides() {
+      lowGuideCtx.clearRect(0, 0, lowFreqCanvasGuides.width, lowFreqCanvasGuides.height);
+      lowGuideCtx.strokeStyle = 'white';
+      lowGuideCtx.lineWidth = 1;
+      lowGuideCtx.beginPath();
+      // Horizontal guide lines at the top and bottom.
+      lowGuideCtx.moveTo(0, 0);
+      lowGuideCtx.lineTo(lowFreqCanvasGuides.width, 0);
+      lowGuideCtx.moveTo(0, lowFreqCanvasGuides.height);
+      lowGuideCtx.lineTo(lowFreqCanvasGuides.width, lowFreqCanvasGuides.height);
+      lowGuideCtx.stroke();
+      // Labels.
+      lowGuideCtx.fillStyle = 'white';
+      lowGuideCtx.font = '12px sans-serif';
+      lowGuideCtx.fillText('255 (max amplitude)', 2, 12);
+      lowGuideCtx.fillText('0 (min amplitude)', 2, lowFreqCanvasGuides.height - 2);
+    }
+
+    // Draw static guides for the full-range heatmap.
+    function drawHeatmapGuides(maxFrequency) {
+      heatmapGuideCtx.clearRect(0, 0, heatmapCanvasGuides.width, heatmapCanvasGuides.height);
+      heatmapGuideCtx.strokeStyle = 'white';
+      heatmapGuideCtx.lineWidth = 1;
+      heatmapGuideCtx.beginPath();
+      // Horizontal guide lines at the top and bottom.
+      heatmapGuideCtx.moveTo(0, 0);
+      heatmapGuideCtx.lineTo(heatmapCanvasGuides.width, 0);
+      heatmapGuideCtx.moveTo(0, heatmapCanvasGuides.height);
+      heatmapGuideCtx.lineTo(heatmapCanvasGuides.width, heatmapCanvasGuides.height);
+      heatmapGuideCtx.stroke();
+      // Labels.
+      heatmapGuideCtx.fillStyle = 'white';
+      heatmapGuideCtx.font = '12px sans-serif';
+      heatmapGuideCtx.fillText(`${maxFrequency.toFixed(0)} Hz (max)`, 2, 12);
+      heatmapGuideCtx.fillText(`0 Hz (min)`, 2, heatmapCanvasGuides.height - 2);
+    }
+
+    fileInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const arrayBuffer = e.target.result;
+        // Create a new AudioContext.
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        audioCtx.decodeAudioData(arrayBuffer, function(audioBuffer) {
+          // Create an audio source.
+          const source = audioCtx.createBufferSource();
+          source.buffer = audioBuffer;
+          
+          // Create two AnalyserNodes.
+          const analyserLow = audioCtx.createAnalyser();
+          const analyserHeat = audioCtx.createAnalyser();
+          analyserLow.fftSize = 2048;
+          analyserHeat.fftSize = 2048;
+          const bufferLengthLow = analyserLow.frequencyBinCount;
+          const frequencyDataLow = new Uint8Array(bufferLengthLow);
+          const bufferLengthHeat = analyserHeat.frequencyBinCount;
+          const frequencyDataHeat = new Uint8Array(bufferLengthHeat);
+          
+          // Connect the source to both analysers.
+          source.connect(analyserLow);
+          source.connect(analyserHeat);
+          // Connect one analyser to the destination to hear the audio.
+          analyserLow.connect(audioCtx.destination);
+          
+          // Low-frequency analysis: 20–150 Hz.
+          const sampleRate = audioCtx.sampleRate;
+          const freqResolution = sampleRate / analyserLow.fftSize;
+          const lowIndex = Math.floor(20 / freqResolution);
+          const highIndex = Math.ceil(150 / freqResolution);
+          
+          // For full-range heatmap, the max frequency is sampleRate/2.
+          const maxFrequency = sampleRate / 2;
+          
+          // Draw the static guides.
+          drawLowFreqGuides();
+          drawHeatmapGuides(maxFrequency);
+          
+          // Enable the pause button.
+          pauseButton.disabled = false;
+          pauseButton.textContent = 'Pause';
+          
+          // Start audio playback.
+          source.start();
+          
+          // Animation loop for the low-frequency scrolling line graph.
+          function drawLowFreq() {
+            analyserLow.getByteFrequencyData(frequencyDataLow);
+            let sum = 0, count = 0;
+            for (let i = lowIndex; i < highIndex; i++) {
+              sum += frequencyDataLow[i];
+              count++;
+            }
+            const currentEnergy = count ? sum / count : 0;
+            // Scroll the data canvas by 1 pixel to the left.
+            const imageData = lowCtx.getImageData(1, 0, lowFreqCanvasData.width - 1, lowFreqCanvasData.height);
+            lowCtx.putImageData(imageData, 0, 0);
+            // Clear the rightmost column.
+            lowCtx.fillStyle = 'black';
+            lowCtx.fillRect(lowFreqCanvasData.width - 1, 0, 1, lowFreqCanvasData.height);
+            // Map currentEnergy (0–255) to a vertical position.
+            const y = lowFreqCanvasData.height - Math.floor((currentEnergy / 255) * lowFreqCanvasData.height);
+            lowCtx.fillStyle = 'lime';
+            lowCtx.fillRect(lowFreqCanvasData.width - 1, y, 1, 1);
+  
+            // Schedule the next frame if the audio is still playing.
+            if (audioCtx.currentTime < audioBuffer.duration) {
+              lowFreqAnimationId = requestAnimationFrame(drawLowFreq);
+            }
+          }
+  
+          // Animation loop for the full-range heatmap spectrogram.
+          function drawHeatmap() {
+            analyserHeat.getByteFrequencyData(frequencyDataHeat);
+            // Scroll the data canvas by 1 pixel to the left.
+            const imageData = heatmapCtx.getImageData(1, 0, heatmapCanvasData.width - 1, heatmapCanvasData.height);
+            heatmapCtx.putImageData(imageData, 0, 0);
+            // Clear the rightmost column.
+            heatmapCtx.fillStyle = 'black';
+            heatmapCtx.fillRect(heatmapCanvasData.width - 1, 0, 1, heatmapCanvasData.height);
+            // Calculate vertical scale: flip so that lower frequencies appear at the bottom.
+            const scaleY = heatmapCanvasData.height / bufferLengthHeat;
+            for (let i = 0; i < bufferLengthHeat; i++) {
+              const value = frequencyDataHeat[i];
+              // Map the amplitude to a color hue (0 = red for high amplitude, 240 = blue for low amplitude).
+              const hue = (1 - (value / 255)) * 240;
+              heatmapCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+              const yPos = heatmapCanvasData.height - ((i + 1) * scaleY);
+              heatmapCtx.fillRect(heatmapCanvasData.width - 1, yPos, 1, Math.ceil(scaleY));
+            }
+  
+            // Schedule the next frame if the audio is still playing.
+            if (audioCtx.currentTime < audioBuffer.duration) {
+              heatmapAnimationId = requestAnimationFrame(drawHeatmap);
+            }
+          }
+  
+          // Start the animation loops.
+          lowFreqAnimationId = requestAnimationFrame(drawLowFreq);
+          heatmapAnimationId = requestAnimationFrame(drawHeatmap);
+        }, function(error) {
+          console.error("Error decoding audio data:", error);
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  </script>
+</body>
+</html>
