@@ -6,6 +6,8 @@ The frequency range for sound that's coming through subwoofers is widely argued,
 
 ## Visualizing a Banger
 
+![Screenshot of banger analysis web app analyzing "Latto - Big Mama.mp3"](./assets/images/banger_analysis.png)
+
 For a quick visual, I made [a client-side web app](https://nrrb.github.io/musicanalysis/) that uses the [createAnalyser()](https://developer.mozilla.org/en-US/docs/Web/API/BaseAudioContext/createAnalyser) method from the `BaseAudioContext` audio interface available in virtually all modern browsers, and displays a line graph of the average energy in the 20 - 150 Hz range along with spectrogram of the entire audio signal. Upload an MP3 and it will play the song while showing the energy analysis. See the code here: [index.html](./index.html)
 
 ## Library Analysis
