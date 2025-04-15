@@ -14,7 +14,7 @@ For a quick visual, I made [a client-side web app](https://nrrb.github.io/musica
 
 Now I wanted to get a single numerical score per song for each of the songs in my library so I could compare them. A higher value would mean more energy in the 20 - 150 Hz range, which meant more _feeling_. 
 
-For this task I made a Python script that would take as arguments the path to my music library and the path to an output CSV file:
+For this task I made [a Python script](./batch_subsonic_energy.py) that would take as arguments the path to my music library and the path to an output CSV file:
 
 Syntax:
 ```bash
